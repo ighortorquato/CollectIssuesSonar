@@ -1,0 +1,25 @@
+{
+  "name": "sonar-issues-export",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node --loader ts-node/esm exportIssues.ts",
+    "build": "tsc",
+    "run": "node dist/exportIssues.js"
+  },
+  "dependencies": {
+    "csv-writer": "^1.6.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0",
+    "@typescript-eslint/eslint-plugin": "^6.11.0",
+    "@typescript-eslint/parser": "^6.11.0",
+    "eslint": "^8.53.0",
+    "eslint-config-prettier": "^10.0.2",
+    "eslint-plugin-prettier": "^5.2.3",
+    "prettier": "3.5.3",
+    "dotenv": "^16.3.1",
+    "axios": "^1.4.0"
+  }
+}
