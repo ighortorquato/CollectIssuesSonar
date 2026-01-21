@@ -39,7 +39,7 @@ async function fetchIssues() {
         params: {
           componentKeys: PROJECT_KEY,
           branch: BRANCH,
-          types: "BUG",
+          types: "BUG,CODE_SMELL",
           severities: "MAJOR,CRITICAL",
           statuses: "OPEN",
           ps: pageSize,
