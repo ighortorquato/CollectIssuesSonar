@@ -1,3 +1,5 @@
+# CSV exports
+*.csv
 # Node modules
 node_modules/
 
