@@ -21,6 +21,18 @@ if (!SONAR_TOKEN) {
   throw new Error("Defina a variável de ambiente SONAR_TOKEN");
 }
 
+const typePriority: Record<string, number> = {
+  BUG: 1,
+  VULNERABILITY: 2,
+  CODE_SMELL: 3
+};
+
+const severityPriority: Record<string, number> = {
+  BLOCKER: 1,
+  CRITICAL: 2,
+  MAJOR: 3
+};
+
 const auth = {
   username: SONAR_TOKEN,
   password: ""
@@ -99,8 +111,27 @@ function generateCSV(issues: any[]) {
   console.log(`Arquivo gerado: ${fileName}`);
 }
 
+function sortIssuesByPriority(issues: any[]) {
+  return issues.sort((a, b) => {
+    const typeDiff =
+      (typePriority[a.type] ?? 99) -
+      (typePriority[b.type] ?? 99);
+
+    if (typeDiff !== 0) {
+      return typeDiff;
+    }
+
+    return (
+      (severityPriority[a.severity] ?? 99) -
+      (severityPriority[b.severity] ?? 99)
+    );
+  });
+}
+
+
 (async () => {
   const issues = await fetchIssues();
   console.log(`Issues encontradas na branch "${BRANCH}": ${issues.length}`);
-  generateCSV(issues);
+  const orderedIssues = sortIssuesByPriority(issues);
+  generateCSV(orderedIssues);
 })();
