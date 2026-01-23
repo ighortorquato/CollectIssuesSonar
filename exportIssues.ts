@@ -20,6 +20,22 @@ if (!PROJECT_KEY) {
 if (!SONAR_TOKEN) {
   throw new Error("Defina a variável de ambiente SONAR_TOKEN");
 }
+type OrderMode = "priority" | "component";
+
+function getOrderMode(): OrderMode {
+  const arg = process.argv.find(a => a.startsWith("--order="));
+  if (!arg) {
+    return "priority"; // padrão
+  }
+
+  const value = arg.split("=")[1];
+  if (value === "component" || value === "priority") {
+    return value;
+  }
+
+  console.warn(`Modo de ordenação inválido (${value}), usando 'priority'.`);
+  return "priority";
+}
 
 const typePriority: Record<string, number> = {
   BUG: 1,
@@ -36,6 +52,18 @@ const severityPriority: Record<string, number> = {
 const auth = {
   username: SONAR_TOKEN,
   password: ""
+};
+
+type Issue = {
+  key: string;
+  type: string;
+  severity: string;
+  status: string;
+  component?: string;
+  line?: number;
+  message: string;
+  author?: string;
+  creationDate: string;
 };
 
 async function fetchIssues() {
@@ -111,27 +139,43 @@ function generateCSV(issues: any[]) {
   console.log(`Arquivo gerado: ${fileName}`);
 }
 
-function sortIssuesByPriority(issues: any[]) {
+function sortIssues(issues: Issue[], mode: OrderMode): Issue[] {
   return issues.sort((a, b) => {
+    if (mode === "component") {
+      return (a.component ?? "").localeCompare(b.component ?? "");
+    }
+
+    // PRIORITY (padrão)
     const typeDiff =
       (typePriority[a.type] ?? 99) -
       (typePriority[b.type] ?? 99);
 
-    if (typeDiff !== 0) {
-      return typeDiff;
-    }
+    if (typeDiff !== 0) return typeDiff;
 
-    return (
+    const severityDiff =
       (severityPriority[a.severity] ?? 99) -
-      (severityPriority[b.severity] ?? 99)
-    );
+      (severityPriority[b.severity] ?? 99);
+
+    if (severityDiff !== 0) return severityDiff;
+
+    return (a.component ?? "").localeCompare(b.component ?? "");
   });
 }
 
 
 (async () => {
-  const issues = await fetchIssues();
-  console.log(`Issues encontradas na branch "${BRANCH}": ${issues.length}`);
-  const orderedIssues = sortIssuesByPriority(issues);
-  generateCSV(orderedIssues);
+  try {
+    const orderMode = getOrderMode();
+    console.log(`Buscando issues no SonarQube (order=${orderMode})...`);
+
+    const issues = await fetchIssues();
+    const sortedIssues = sortIssues(issues, orderMode);
+
+    await generateCSV(sortedIssues);
+
+    console.log(`CSV gerado com sucesso (${sortedIssues.length} issues).`);
+  } catch (err) {
+    console.error("Erro ao gerar relatório:", err);
+    process.exit(1);
+  }
 })();
